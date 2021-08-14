@@ -6,10 +6,28 @@ import time
 import json
 import shutil
 
-def runner(config_file, spawn_process, outsdir):
+def runner(config_file, outsdir):
     settings = []
     proclist = []
     next_setting = 0
+
+    def spawn_process(d):
+        if d['type'] == 'cgp':
+            print(f"running {d['circuit_name']}")
+            template = f"./build/cgp path ./funcs/{d['input_file']} generations {d['gen']} second-criterion true column {d['column']} lambda {d['lambda']} mutate {d['mutation']} functions {d['functions']}"
+            out = f"./{outsdir}/{d['output_file']}"
+            outfile = open(out, 'a')
+            p = subprocess.Popen(template, shell=True, stdout=outfile, stderr=outfile)
+            return p
+        elif d['type'] == 'anf':
+            print(f"running {d['circuit_name']}")
+            template = f"./build/anf path ./funcs/{d['input_file']} generations {d['gen']} second-criterion true arity {d['arity']} terms {d['terms']} lambda {d['lambda']} mutate {d['mutation']}"
+            out = f"./{outsdir}/{d['output_file']}"
+            outfile = open(out, 'a')
+            p = subprocess.Popen(template, shell=True, stdout=outfile, stderr=outfile)
+            return p
+        else:
+            print('neznam typ ' + d['type'])
 
     def load_settings():
         nonlocal settings
@@ -28,14 +46,16 @@ def runner(config_file, spawn_process, outsdir):
     def get_next_setting():
         nonlocal next_setting
         n = 0
-        while settings[next_setting]['run'] == settings[next_setting]['runs']:
+        while settings[next_setting]['run'] >= settings[next_setting]['runs']:
             next_setting = (next_setting + 1) % len(settings)
             n += 1
             if n > len(settings):
                 return None
         settings[next_setting]['run'] += 1
+        setting = settings[next_setting]
         next_setting = (next_setting + 1) % len(settings)
-        return settings[next_setting]
+        print(setting['run'], setting['runs'])
+        return setting
 
     load_settings()
 
@@ -44,7 +64,7 @@ def runner(config_file, spawn_process, outsdir):
 
     while True:
         no_settings = False
-        while len(proclist) < 5:
+        while len(proclist) < 20:
             s = get_next_setting()
             if not s:
                 no_settings = True
@@ -66,26 +86,17 @@ def runner(config_file, spawn_process, outsdir):
         
     print('all finished')
 
-def spawn_process_cgp(d):
-    print(f"running {d['circuit_name']}")
-    template = f"./build/cgp path ./data/{d['input_file']} generations {d['gen']} second-criterion true column {d['column']} lambda {d['lambda']} mutate {d['mutation']} functions {d['functions']}"
-    out = f"./outs_cgp/{d['output_file']}"
-    outfile = open(out, 'a')
-    p = subprocess.Popen(template, shell=True, stdout=outfile, stderr=outfile)
-    return p
-
-def spawn_process_anf(d):
-    print(f"running {d['circuit_name']}")
-    template = f"./build/anf path ./data/{d['input_file']} generations {d['gen']} second-criterion true arity {d['arity']} terms {d['terms']} lambda {d['lambda']} mutate {d['mutation']}"
-    out = f"./outs_anf/{d['output_file']}"
-    outfile = open(out, 'a')
-    p = subprocess.Popen(template, shell=True, stdout=outfile, stderr=outfile)
-    return p
 
 
-if sys.argv[1] == "cgp":
-    runner("cgp_run_settings.json", spawn_process_cgp, "outs_cgp")
-elif sys.argv[1] == "anf":
-    runner("anf_run_settings.json", spawn_process_anf, "outs_anf")
-else:
-    print("neznamy switch")
+
+def print_circuits(config_file):
+    crc = []
+    with open(config_file, 'r') as outfile:
+        settings = json.load(outfile)
+        for setting in settings:
+            if setting["circuit_name"] not in crc:
+                crc.append(setting["circuit_name"])
+    for each in crc:
+        print(each)
+
+runner("run_settings.json", "outs")

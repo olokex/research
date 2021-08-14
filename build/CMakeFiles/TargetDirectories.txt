@@ -1,0 +1,4 @@
+/home/olok/research/build/CMakeFiles/rebuild_cache.dir
+/home/olok/research/build/CMakeFiles/edit_cache.dir
+/home/olok/research/build/CMakeFiles/anf.dir
+/home/olok/research/build/CMakeFiles/cgp.dir

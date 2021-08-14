@@ -119,16 +119,16 @@ int main(int argc, char *argv[]) {
 
         Parameters params(argc, argv);
         ReferenceBits reference_bits(params.path);
-        // auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::steady_clock::now();
         
         std::tuple<Circuit, uint, uint> hold = evolution(params, reference_bits);
         if (std::get<1>(hold) && params.second_criterion) {
             evolution_second_criterio(params, reference_bits, hold);
         }
         
-        // auto end = std::chrono::steady_clock::now();
-        // auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        // std::cout << "time: " << elapsed_time.count() << " ms" << std::endl;
+        auto end = std::chrono::steady_clock::now();
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "time: " << elapsed_time.count() << " ms" << std::endl;
     } catch (const std::runtime_error &err) {
         std::cerr << "ERROR: " << err.what() << std::endl;
         return 1;

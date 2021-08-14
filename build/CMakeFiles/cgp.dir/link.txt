@@ -1,0 +1,1 @@
+/usr/bin/g++  -Wall -Wextra -O3 -march=native   CMakeFiles/cgp.dir/src/cgp/main.cpp.o CMakeFiles/cgp.dir/src/cgp/parameters.cpp.o CMakeFiles/cgp.dir/src/cgp/circuit.cpp.o CMakeFiles/cgp.dir/src/reference_bits.cpp.o CMakeFiles/cgp.dir/src/utils.cpp.o  -o cgp 

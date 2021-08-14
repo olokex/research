@@ -126,15 +126,15 @@ int main(int argc, char *argv[]) {
         ReferenceBits ref(p.path);
         p.is_valid(ref);
 
-        // auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::steady_clock::now();
         std::tuple<Circuit, uint, uint> hold = evolution(p, ref);
         if (std::get<1>(hold) && p.second_criterion) {
             evolution_second_criterio(p, ref, hold);
         }
 
-        // auto end = std::chrono::steady_clock::now();
-        // auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        // std::cout << "time: " << elapsed_time.count() << " ms" << std::endl;
+        auto end = std::chrono::steady_clock::now();
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "time: " << elapsed_time.count() << " ms" << std::endl;
     } catch (const std::runtime_error &err) {
         std::cerr << "ERROR: " << err.what() << std::endl;
         return 1;

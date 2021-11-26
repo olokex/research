@@ -14,14 +14,14 @@ def runner(config_file, outsdir):
     def spawn_process(d):
         if d['type'] == 'cgp':
             print(f"running {d['circuit_name']}")
-            template = f"./build/cgp path ./funcs/{d['input_file']} generations {d['gen']} second-criterion true column {d['column']} lambda {d['lambda']} mutate {d['mutation']} functions {d['functions']}"
+            template = f"./build/cgp path ./data/{d['input_file']} generations {d['gen']} second-criterion true column {d['column']} lambda {d['lambda']} mutate {d['mutation']} functions {d['functions']}"
             out = f"./{outsdir}/{d['output_file']}"
             outfile = open(out, 'a')
             p = subprocess.Popen(template, shell=True, stdout=outfile, stderr=outfile)
             return p
         elif d['type'] == 'anf':
             print(f"running {d['circuit_name']}")
-            template = f"./build/anf path ./funcs/{d['input_file']} generations {d['gen']} second-criterion true arity {d['arity']} terms {d['terms']} lambda {d['lambda']} mutate {d['mutation']}"
+            template = f"./build/anf path ./data/{d['input_file']} generations {d['gen']} second-criterion true arity {d['arity']} terms {d['terms']} lambda {d['lambda']} mutate {d['mutation']}"
             out = f"./{outsdir}/{d['output_file']}"
             outfile = open(out, 'a')
             p = subprocess.Popen(template, shell=True, stdout=outfile, stderr=outfile)
@@ -41,7 +41,7 @@ def runner(config_file, outsdir):
     def save_settings():
         shutil.copy(config_file, config_file + '.bak')
         with open(config_file, 'w') as outfile:
-            json.dump(settings, outfile)
+            json.dump(settings, outfile, indent=4)
 
     def get_next_setting():
         nonlocal next_setting
@@ -64,7 +64,7 @@ def runner(config_file, outsdir):
 
     while True:
         no_settings = False
-        while len(proclist) < 20:
+        while len(proclist) < 12:
             s = get_next_setting()
             if not s:
                 no_settings = True
@@ -73,7 +73,7 @@ def runner(config_file, outsdir):
             proclist.append((p, s))
         if no_settings and not proclist:
             break
-        time.sleep(5)
+        time.sleep(1)
         ended = []
         for p in proclist:
             if p[0].poll() != None:
@@ -99,4 +99,4 @@ def print_circuits(config_file):
     for each in crc:
         print(each)
 
-runner("run_settings.json", "outs")
+runner("configuration_aritf.json", "out_arit_fce")

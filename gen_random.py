@@ -2,13 +2,13 @@ import random
 import os
 
 N_FUNCS = 1000
-N_INPUTS = 6
+N_INPUTS = 7
 N_OUTPUTS = 1
 
 generated = set()
 
-if not os.path.exists('funcs'):
-	os.makedirs('funcs')
+if not os.path.exists('funcs7'):
+	os.makedirs('funcs7')
 
 n = 0
 while n < N_FUNCS:
@@ -18,6 +18,6 @@ while n < N_FUNCS:
 	if s in generated:
 		continue
 	generated.add(s)
-	with open(f'funcs/func{str(n).zfill(len(str(N_FUNCS - 1)))}', 'w') as f:
+	with open(f'funcs7/func{str(n).zfill(len(str(N_FUNCS - 1)))}', 'w') as f:
 		f.write(s)
 	n += 1

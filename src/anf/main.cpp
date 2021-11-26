@@ -44,7 +44,7 @@ std::tuple<Circuit, uint, uint> evolution(const Parameters &p, const ReferenceBi
             evaluation++;
 
             if (population[i].fitness == 0) {
-                // population[i].print_circuit(ref.input.size(), p.print_ascii);
+                population[i].print_circuit(ref.input.size(), p.print_ascii);
                 std::cout << "evaluations: " << evaluation << std::endl;
 
                 if (p.print_used_gates) {
@@ -108,7 +108,7 @@ void evolution_second_criterio(const Parameters &p, const ReferenceBits &ref, co
         fittest.print_used_gates(ref.input.size(), true);
     }
     
-    // fittest.print_circuit(ref.input.size(), p.print_ascii);
+    fittest.print_circuit(ref.input.size(), p.print_ascii);
     fittest.calculate_used_area(ref.input.size(), true);
     std::cout << "optimized area: " << fittest.area << std::endl; 
 }

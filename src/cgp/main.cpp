@@ -45,7 +45,7 @@ std::tuple<Circuit, uint, uint> evolution(const Parameters &param, const Referen
             population[i].calculate_fitness(reference_bits);
             evaluation++;
             if (population[i].fitness == 0) {
-                // population[i].print_circuit_cgpviewer(param, reference_bits);
+                population[i].print_circuit_cgpviewer(param, reference_bits);
                 std::cout << "evaluations: " << evaluation << std::endl;
                 if (param.print_used_gates) {
                     population[i].print_used_gates(reference_bits.input.size(), param.allowed_functions);
@@ -80,6 +80,7 @@ void evolution_second_criterio(const Parameters &param, const ReferenceBits &ref
     std::cout << std::fixed << std::setprecision(2);
     fittest.calculate_used_area(reference_bits.input.size(), param.allowed_functions);
     std::cout << "first invidual area: " << fittest.area << std::endl;
+    fittest.print_circuit_cgpviewer(param, reference_bits);
     for (uint gen = generation_remain; gen < param.generations; gen++) {
         for (int i = 0; i < param.lambda; i++) {
             population[i] = fittest;
@@ -100,7 +101,7 @@ void evolution_second_criterio(const Parameters &param, const ReferenceBits &ref
         }
     }
 
-    // fittest.print_circuit_cgpviewer(param, reference_bits);
+    fittest.print_circuit_cgpviewer(param, reference_bits);
     if (param.print_used_gates) {
         fittest.print_used_gates(reference_bits.input.size(), param.allowed_functions);
     }

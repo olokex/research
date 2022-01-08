@@ -18,6 +18,8 @@
 #include "../utils.hpp"
 #include "../process_size.hpp"
 
+#include "../cgp/cell.hpp"
+
 /**
  * Circuit constructor which calls formula(s) constructor(s). Recommended to check out the formula class instead. 
  */
@@ -211,3 +213,137 @@ Circuit Circuit::crossover(Circuit parent1, Circuit parent2) {
     }
     return offspring;
 }
+
+
+
+/*
+    Method print out the CGP representation (chromosome), which is processed and visualised by cgp viewer.
+
+    For easier workthrough is utilized CELL from CGP implementation. Thus literals are mapped onto
+    2 in 1 out gates and then chained in "evaluation" through XORs (for each term). This is done for each formula.
+
+    Gate depends on its inputs:
+        1 input   - only connects within its index and returns gate IN.
+        2 inputs  - connecting two inputs then returns gates with AND (negated inputs are forwarded in "negative column")
+        3+ inputs - connecting firstly two inputs then it's paired with previous pair and one input
+            1 2 3 4 -> (1, 2)(new 5th index) next pair is (5, 3)(6th) then (6, 4)
+*/
+void Circuit::print_cgp_viewer(const ReferenceBits &reference_bits) {
+    std::vector<Cell> cells;
+    std::vector<int> terms_indices;
+    std::vector<int> output_indices;
+
+    for (auto input : reference_bits.input) {
+        Cell c;
+        c.function = Function::In;
+        c.output = input;
+        cells.push_back(c);
+    }
+
+    for (size_t i = 0; i < reference_bits.input.size(); i++) {
+        Cell c;
+        c.function = Function::Not;
+        c.output = ~reference_bits.input[i];
+        c.input1 = i;
+        c.input2 = 0;
+        cells.push_back(c);
+    }
+
+    auto literal_index = [&](auto const &f, auto const idx) {
+        int ref_size = reference_bits.input.size();
+        int literal_idx = idx % ref_size;
+
+        if (f.literals[idx].state == State::Is) {
+            return literal_idx;
+        } 
+        if (f.literals[idx].state == State::Not) {
+            return literal_idx + ref_size;
+        }
+        throw std::runtime_error("ERROR: unexpected literal value IsNot");
+    };
+
+    auto simple_and = [&](auto const &f, int const idx, int const idx2) {
+        Cell c;
+        c.input1 = literal_index(f, idx);
+        c.input2 = literal_index(f, idx2);
+        c.function = Function::And;
+        cells.push_back(c);
+        return cells.size();
+    };
+
+    int xor_shift = 0;
+    for (auto &f : formulas) {
+        for (auto &non_vec : f.non_zeros) {
+            if (non_vec.size() == 1) {
+                Cell c;
+                c.input1 = literal_index(f, non_vec[0]);
+                c.input2 = 0;
+                c.function = Function::In;
+                cells.push_back(c);
+                terms_indices.push_back(cells.size() - 1);
+            }
+
+            if (non_vec.size() == 2) {
+                int idx = simple_and(f, non_vec[0], non_vec[1]);
+                terms_indices.push_back(idx - 1);
+            }
+
+            if (non_vec.size() > 2) {
+                int idx = simple_and(f, non_vec[0], non_vec[1]);
+
+                for (size_t i = 2; i < non_vec.size(); i++) {
+                    Cell c;
+                    c.input1 = idx - 1;
+                    c.input2 = literal_index(f, non_vec[i]);
+                    c.function = Function::And;
+                    cells.push_back(c);
+                    idx = cells.size();
+                }
+
+                terms_indices.push_back(idx - 1);
+            }
+        }
+
+        // if (f.non_zeros.size() < 2) continue;
+        // if there is only 1 term in each formula will cause undefined behavior
+        // for evolutionary search it's meaningless to run with term = 1
+        Cell c;
+        c.input1 = terms_indices[0 + xor_shift];
+        c.input2 = terms_indices[1 + xor_shift];
+        c.function = Function::Xor;
+        cells.push_back(c);
+        int idx = cells.size() - 1;
+
+        for (size_t i = 2 + xor_shift; i < terms_indices.size(); i++) {
+            Cell c;
+            c.input1 = idx;
+            c.input2 = terms_indices[i];
+            c.function = Function::Xor;
+            cells.push_back(c);
+            idx = cells.size() - 1;
+        }
+        xor_shift = terms_indices.size();
+        output_indices.push_back(idx);
+    }
+
+    // "copy paste" from CGP implementation, very slight changes were done
+    printf("{%ld,%ld,%ld,%d,2,1,%d}",
+        reference_bits.input.size(),
+        reference_bits.output.size(),
+        cells.size() - reference_bits.input.size(), 1, 8
+    );
+
+    for (unsigned int i = reference_bits.input.size(); i < cells.size(); i++) {
+        printf("([%d]%d,%d,%d)", i, cells[i].input1, cells[i].input2, static_cast<int>(cells[i].function));
+    }
+
+    std::cout << "(" << output_indices[0];
+    for (unsigned int i = 1; i < output_indices.size(); i++) {
+        if (i != output_indices.size()) {
+            std::cout << "," << output_indices[i];
+        } else {
+            std::cout << output_indices[i];
+        }
+    }
+    std::cout << ")" << std::endl;
+ }

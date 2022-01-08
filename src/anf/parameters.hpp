@@ -26,6 +26,7 @@ public:
     bool print_used_gates = false;
     bool print_used_area = false;
     bool print_ascii = false;
+    bool print_cgp_representation = false;
     bool second_criterion = false;
     int print_count = 100'000;
 

@@ -23,6 +23,9 @@ public:
     double area = std::numeric_limits<double>::max();
 
     Circuit(const Parameters &param, const ReferenceBits &reference_bits);
+
+    Circuit(const std::string &cgp_chromosome, const ReferenceBits &reference_bits, Parameters &params);
+
     void print_circuit_cgpviewer(const Parameters &param, const ReferenceBits &reference_bits);
     void evaluate(const int input_size);
     void calculate_fitness(const ReferenceBits &reference_bits);
@@ -38,6 +41,7 @@ private:
     int inputs_count;
     int delta = 0;
 
+    std::vector<int> get_outputs(const std::string &cgp_chromosome);
     void push_inputs(const ReferenceBits &reference_bits);
     int count_gates_within_function(const Function fun);
     bool redundant_gate(const int idx);

@@ -37,4 +37,19 @@ static inline std::string function_name(const Function f) {
     }
 }
 
+static inline Function index_to_function(const int idx) {
+        switch (idx) {
+        case 0: return Function::In;
+        case 1: return Function::Not;
+        case 2: return Function::And;
+        case 3: return Function::Or;
+        case 4: return Function::Xor;
+        case 5: return Function::Nand;
+        case 6: return Function::Nor;
+        case 7: return Function::Xnor;
+        default:
+            throw "unknown function's index in CGP representation";
+    }
+}
+
 #endif /* FUNCTION_H */

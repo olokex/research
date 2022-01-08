@@ -81,7 +81,12 @@ Parameters::Parameters(const int argc, const char * const argv[]) {
                 throw std::runtime_error("Invalid value for print-ascii, expected true or false");
             }
             print_ascii = (val == "true");
-        } else {
+        } else if (opt == "print-cgp") {
+            if (val != "true" && val != "false") {
+                throw std::runtime_error("Invalid value for pprint-cgp, expected true or false");
+            }
+            print_cgp_representation = (val == "true");
+        }  else {
             throw std::runtime_error("Invalid switch `" + opt + "`");
         }
     }

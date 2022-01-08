@@ -88,6 +88,12 @@ Parameters::Parameters(const int argc, const char * const argv[]) {
             print_used_area = (val == "true");
         } else if (opt == "functions") {
             parse_function_list(val);
+        } else if (opt == "load-circuit") {
+            cgp_chromosome = val;
+        } else if (opt == "resize") {
+            if (!utils::parse_int(expand_gates, val) || expand_gates < 1) {
+                throw std::runtime_error("Invalid value for resize, expected number >= 1");
+            }
         } else {
             throw std::runtime_error("Invalid switch option `" + opt + " " + val + "`");
         }
@@ -102,6 +108,8 @@ Parameters::Parameters(const int argc, const char * const argv[]) {
     }
     /*     input1, input2, function => 3                       */
     mutation_rate = (((column * row) * 3) / 100) * mutation_rate;
+    /* find and assign the column x row size of cgp chromosome */
+    if (!cgp_chromosome.empty()) get_grid_size();
 }
 
 void Parameters::function_append(const std::string &fun) {
@@ -127,6 +135,29 @@ void Parameters::parse_function_list(const std::string &list) {
 
     if (allowed_functions.size() <= 1) {
         throw std::runtime_error("There is too little functions to work with");
+    }
+}
+
+void Parameters::get_grid_size() {
+    int comma = 0;
+    std::string tmp = "";
+
+    for (auto x : cgp_chromosome) {
+        if (comma == 2 || comma == 3) {
+            tmp += x;
+        }
+
+        if (x == ','){
+            if (!tmp.empty() && comma == 2) {
+                column = std::stoi(tmp);
+                tmp.erase();
+            }
+            if (comma == 3) {
+                row = std::stoi(tmp);
+                return;
+            }
+            comma++;
+        }
     }
 }
 

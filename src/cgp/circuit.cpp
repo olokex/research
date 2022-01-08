@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <cstdio>
+#include <regex>
 #include "parameters.hpp"
 #include "cell.hpp"
 #include "circuit.hpp"
@@ -44,6 +45,54 @@ Circuit::Circuit(const Parameters &param, const ReferenceBits &reference_bits) {
     for (unsigned int i = 0; i < reference_bits.output.size(); i++) {
         output_indices.push_back(random_input(cells.size(), param.column + 1));
     }
+}
+
+Circuit::Circuit(const std::string &cgp_chromosome, const ReferenceBits &reference_bits, Parameters &params) {
+    push_inputs(reference_bits);
+
+    std::regex rgx(R"(\(\[.*?\](\d+),(\d+),(\d+)\) ?)");
+    std::smatch m;
+    std::string x = std::string(cgp_chromosome);
+    while (std::regex_search(x, m, rgx)) {
+        Cell cell;
+        cell.input1 = std::stoi(std::string(m[1]));
+        cell.input2 = std::stoi(std::string(m[2]));
+        cell.function = index_to_function(std::stoi(m[3])); // regex and stoi will NOT catch bad cast from string to int
+        cells.push_back(cell);
+        x = m.suffix();
+    }
+    output_indices = get_outputs(cgp_chromosome);
+
+    // default 25 % of gates is added in back to support mutation
+    const int add_gates = std::ceil(cells.size() / 100.0 * params.expand_gates);
+
+    for (int i = 0; i < add_gates; i++) {
+        Cell c;
+        c.input1 = utils::randint(0, cells.size() - 1);
+        c.input2 = utils::randint(0, cells.size() - 1);
+        c.function = params.allowed_functions[utils::randint(0, params.allowed_functions.size())];
+        cells.push_back(c);
+    }
+    params.column = cells.size() - reference_bits.input.size();
+}
+
+
+std::vector<int> Circuit::get_outputs(const std::string &cgp_chromosome) {
+    std::vector<int> out_idx;
+    int opening_bracket;
+    std::string str_cgp = cgp_chromosome;
+    std::string num = "";
+    for (opening_bracket = str_cgp.size(); str_cgp[opening_bracket] != '('; opening_bracket--);
+    for (size_t i = opening_bracket + 1; i < str_cgp.size() - 1; i++) {
+        if (str_cgp[i] == ',') {
+            out_idx.push_back(std::stoi(num));
+            num = "";
+            continue;
+        }
+        num += str_cgp[i];
+    }
+    out_idx.push_back(std::stoi(num));
+    return out_idx;
 }
 
 

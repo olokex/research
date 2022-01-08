@@ -21,9 +21,6 @@
 #include "circuit.hpp"
 
 std::tuple<Circuit, uint, uint> evolution(const Parameters &param, const ReferenceBits &reference_bits) {
-    srand(param.seed);
-    std::cout << "seed: " << param.seed << std::endl;
-
     uint evaluation = 0;
     std::vector<Circuit> population;
     for (int i = 0; i < param.lambda + 1; i++) {
@@ -45,8 +42,8 @@ std::tuple<Circuit, uint, uint> evolution(const Parameters &param, const Referen
             population[i].calculate_fitness(reference_bits);
             evaluation++;
             if (population[i].fitness == 0) {
-                population[i].print_circuit_cgpviewer(param, reference_bits);
                 std::cout << "evaluations: " << evaluation << std::endl;
+                population[i].print_circuit_cgpviewer(param, reference_bits);
                 if (param.print_used_gates) {
                     population[i].print_used_gates(reference_bits.input.size(), param.allowed_functions);
                 }
@@ -80,7 +77,7 @@ void evolution_second_criterio(const Parameters &param, const ReferenceBits &ref
     std::cout << std::fixed << std::setprecision(2);
     fittest.calculate_used_area(reference_bits.input.size(), param.allowed_functions);
     std::cout << "first invidual area: " << fittest.area << std::endl;
-    fittest.print_circuit_cgpviewer(param, reference_bits);
+    // fittest.print_circuit_cgpviewer(param, reference_bits);
     for (uint gen = generation_remain; gen < param.generations; gen++) {
         for (int i = 0; i < param.lambda; i++) {
             population[i] = fittest;
@@ -105,7 +102,7 @@ void evolution_second_criterio(const Parameters &param, const ReferenceBits &ref
     if (param.print_used_gates) {
         fittest.print_used_gates(reference_bits.input.size(), param.allowed_functions);
     }
-    std::cout << "optimized area: " << fittest.area << std::endl;
+    std::cout << "CGP optimized area: " << fittest.area << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -122,11 +119,25 @@ int main(int argc, char *argv[]) {
         ReferenceBits reference_bits(params.path);
         auto start = std::chrono::steady_clock::now();
         
-        std::tuple<Circuit, uint, uint> hold = evolution(params, reference_bits);
-        if (std::get<1>(hold) && params.second_criterion) {
-            evolution_second_criterio(params, reference_bits, hold);
+        srand(params.seed);
+        std::cout << "seed: " << params.seed << std::endl;
+
+        // implicit expectation of opritimization (otherwise loading circuing would be meaningless)
+        if (!params.cgp_chromosome.empty()) {
+            srand(params.seed);
+            Circuit c(params.cgp_chromosome, reference_bits, params);
+            c.evaluate(reference_bits.input.size());
+            c.calculate_fitness(reference_bits);
+            c.calculate_used_area(reference_bits.input.size(), params.allowed_functions);
+
+            evolution_second_criterio(params, reference_bits, {c, 0, 0});
+        } else {
+            std::tuple<Circuit, uint, uint> hold = evolution(params, reference_bits);
+            if (std::get<1>(hold) && params.second_criterion) {
+                evolution_second_criterio(params, reference_bits, hold);
+            }
         }
-        
+
         auto end = std::chrono::steady_clock::now();
         auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         std::cout << "time: " << elapsed_time.count() << " ms" << std::endl;

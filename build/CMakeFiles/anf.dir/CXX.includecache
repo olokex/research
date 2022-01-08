@@ -17,6 +17,8 @@ parameters.hpp
 /home/olok/research/src/anf/parameters.hpp
 formula.hpp
 /home/olok/research/src/anf/formula.hpp
+../cgp/cell.hpp
+/home/olok/research/src/cgp/cell.hpp
 
 /home/olok/research/src/anf/formula.hpp
 ../reference_bits.hpp
@@ -63,6 +65,16 @@ string
 -
 
 /home/olok/research/src/anf/state.hpp
+
+/home/olok/research/src/cgp/cell.hpp
+../reference_bits.hpp
+/home/olok/research/src/reference_bits.hpp
+function.hpp
+/home/olok/research/src/cgp/function.hpp
+
+/home/olok/research/src/cgp/function.hpp
+string
+-
 
 /home/olok/research/src/reference_bits.hpp
 boost/dynamic_bitset.hpp

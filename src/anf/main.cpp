@@ -22,8 +22,6 @@
 
 
 std::tuple<Circuit, uint, uint> evolution(const Parameters &p, const ReferenceBits &ref) {
-    srand(p.seed);
-    std::cout << "seed: " << p.seed << std::endl;
     std::vector<Circuit> population;
     uint evaluation = 0;
     for (int i = 0; i < p.lambda + 1; i++) {
@@ -44,7 +42,9 @@ std::tuple<Circuit, uint, uint> evolution(const Parameters &p, const ReferenceBi
             evaluation++;
 
             if (population[i].fitness == 0) {
-                population[i].print_circuit(ref.input.size(), p.print_ascii);
+                if (!p.print_cgp_representation) {
+                    population[i].print_circuit(ref.input.size(), p.print_ascii);
+                }
                 std::cout << "evaluations: " << evaluation << std::endl;
 
                 if (p.print_used_gates) {
@@ -52,7 +52,10 @@ std::tuple<Circuit, uint, uint> evolution(const Parameters &p, const ReferenceBi
                 }
                 if (p.print_used_area) {
                     population[i].calculate_used_area(ref.input.size(), true);
-                    std::cout << "area: " << population[i].area << std::endl;
+                    std::cout << "ANF area: " << population[i].area << std::endl;
+                }
+                if (p.print_cgp_representation) {
+                    population[i].print_cgp_viewer(ref);
                 }
                 return {population[i], gen, evaluation};
             }
@@ -107,10 +110,15 @@ void evolution_second_criterio(const Parameters &p, const ReferenceBits &ref, co
     if (p.print_used_gates) {
         fittest.print_used_gates(ref.input.size(), true);
     }
+
+    if (p.print_cgp_representation) {
+        fittest.print_cgp_viewer(ref);
+    } else {
+        fittest.print_circuit(ref.input.size(), p.print_ascii);
+    }
     
-    fittest.print_circuit(ref.input.size(), p.print_ascii);
     fittest.calculate_used_area(ref.input.size(), true);
-    std::cout << "optimized area: " << fittest.area << std::endl; 
+    std::cout << "ANF optimized area: " << fittest.area << std::endl; 
 }
 
 int main(int argc, char *argv[]) {
@@ -125,6 +133,9 @@ int main(int argc, char *argv[]) {
         Parameters p(argc, argv);
         ReferenceBits ref(p.path);
         p.is_valid(ref);
+
+        srand(p.seed);
+        std::cout << "seed: " << p.seed << std::endl;
 
         auto start = std::chrono::steady_clock::now();
         std::tuple<Circuit, uint, uint> hold = evolution(p, ref);

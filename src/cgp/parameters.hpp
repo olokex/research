@@ -41,6 +41,8 @@ public:
     bool print_used_area = false;
     bool second_criterion = false;
     int print_count = 100'000;
+    std::string cgp_chromosome = "";
+    int expand_gates = 25;
 
     Parameters();
     Parameters(const int argc, const char * const argv[]);
@@ -60,6 +62,7 @@ private:
 
     void function_append(const std::string &fun);
     void parse_function_list(const std::string &list);
+    void get_grid_size();
 };
 
 #endif /* PARAMETERS_H */

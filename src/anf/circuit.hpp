@@ -15,6 +15,8 @@
 #include "parameters.hpp"
 #include "formula.hpp"
 
+#include "../cgp/cell.hpp"
+
 class Circuit {
 public:
     uint fitness = std::numeric_limits<uint>::max();
@@ -28,6 +30,8 @@ public:
     void mutate_overall(const Parameters &parameters, const ReferenceBits &reference_bits);
 
     static Circuit crossover(Circuit parent1, Circuit parent2);
+
+    void print_cgp_viewer(const ReferenceBits &reference_bits);
 
 private:
     std::tuple<int, int, int> used_gates_optimized(const int inputs_count);

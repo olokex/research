@@ -46,6 +46,8 @@ column                | >= 1
 row                   | >= 1
 lback                 | >= 1
 functions (2 and more)| in,not,and,or,xor,nand,nor,xnor (no spaces within comma)
+resize                | >= 1
+load-circuit          | CGP chromosome {}([],,)()
 
 **ANF only**
 option      | expected value
@@ -53,6 +55,8 @@ option      | expected value
 terms       | >= inputs count
 arity       | >= 1
 print-ascii | true/false
+print-cgp   | true/false
+
 
 ### Get in touch
 Don't hesitate to contact me, if anything unclear, or not working. <br>

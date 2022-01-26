@@ -32,11 +32,18 @@ public:
     static Circuit crossover(Circuit parent1, Circuit parent2);
 
     void print_cgp_viewer(const ReferenceBits &reference_bits);
+    void print_cgp_viewer_optimized(const ReferenceBits &reference_bits);
 
 private:
     std::tuple<int, int, int> used_gates_optimized(const int inputs_count);
     std::tuple<int, int, int> used_gates(const int inputs_count);
     std::vector<Formula> formulas;
+    
+    void cgp_print(const ReferenceBits &reference_bits, const std::vector<Cell> &cells, const std::vector<int> &output_indices) const;
+    void insert_input_gates(const ReferenceBits &reference_bits, std::vector<Cell> &cells);
+    void insert_not_input_gates(const ReferenceBits &reference_bits, std::vector<Cell> &cells);
+    std::map<std::string, int> find_term_patterns(const int input_size);
+    std::string get_pattern(const Formula &f, const int start, const int end);
 };
 
 #endif /* CIRCUIT_H */

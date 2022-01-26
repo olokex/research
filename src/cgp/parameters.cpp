@@ -91,8 +91,8 @@ Parameters::Parameters(const int argc, const char * const argv[]) {
         } else if (opt == "load-circuit") {
             cgp_chromosome = val;
         } else if (opt == "resize") {
-            if (!utils::parse_int(expand_gates, val) || expand_gates < 1) {
-                throw std::runtime_error("Invalid value for resize, expected number >= 1");
+            if (!utils::parse_int(expand_gates, val) || expand_gates < 0) {
+                throw std::runtime_error("Invalid value for resize, expected number >= 0");
             }
         } else {
             throw std::runtime_error("Invalid switch option `" + opt + " " + val + "`");

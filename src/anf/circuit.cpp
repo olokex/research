@@ -233,21 +233,8 @@ void Circuit::print_cgp_viewer(const ReferenceBits &reference_bits) {
     std::vector<int> terms_indices;
     std::vector<int> output_indices;
 
-    for (auto input : reference_bits.input) {
-        Cell c;
-        c.function = Function::In;
-        c.output = input;
-        cells.push_back(c);
-    }
-
-    for (size_t i = 0; i < reference_bits.input.size(); i++) {
-        Cell c;
-        c.function = Function::Not;
-        c.output = ~reference_bits.input[i];
-        c.input1 = i;
-        c.input2 = 0;
-        cells.push_back(c);
-    }
+    insert_input_gates(reference_bits, cells);
+    insert_not_input_gates(reference_bits, cells);
 
     auto literal_index = [&](auto const &f, auto const idx) {
         int ref_size = reference_bits.input.size();
@@ -326,18 +313,87 @@ void Circuit::print_cgp_viewer(const ReferenceBits &reference_bits) {
         output_indices.push_back(idx);
     }
 
-    // "copy paste" from CGP implementation, very slight changes were done
-    printf("{%ld,%ld,%ld,%d,2,1,%d}",
+    cgp_print(reference_bits, cells, output_indices);
+ }
+
+void Circuit::print_cgp_viewer_optimized(const ReferenceBits &reference_bits) {
+    std::map<std::string, int> terms = find_term_patterns(reference_bits.input.size());
+    std::vector<Cell> cells;
+    insert_input_gates(reference_bits, cells);
+    insert_not_input_gates(reference_bits, cells);
+
+    for (const auto &[pattern, idx] : terms) {
+        std::vector<int> inputs;
+        for (size_t i = 0; i < pattern.size(); i++) {
+            if (pattern[i] == '1') inputs.push_back(i);
+            if (pattern[i] == 'N') inputs.push_back(i + reference_bits.input.size());
+        }
+
+        if (inputs.size() == 1) {
+            Cell c;
+            c.input1 = inputs[0];
+            c.input2 = 0;
+            c.function = Function::In;
+            cells.push_back(c);
+        }
+
+        auto simple_and = [&](int const idx, int const idx2) {
+            Cell c;
+            c.input1 = idx;
+            c.input2 = idx2;
+            c.function = Function::And;
+            cells.push_back(c);
+            return cells.size();
+        };
+
+        if (inputs.size() >= 2) {
+            int idx = simple_and(inputs[0], inputs[1]);
+            for (size_t i = 2; i < inputs.size(); i++) {
+                Cell c;
+                c.input1 = idx - 1;
+                c.input2 = inputs[i];
+                c.function = Function::And;
+                cells.push_back(c);
+                idx = cells.size();
+            }
+        }
+        terms[pattern] = cells.size() - 1;
+    }
+
+    int input_size = reference_bits.input.size();
+    std::vector<int> output_indices;
+
+    for (const auto &f : formulas) {
+        std::string pattern = get_pattern(f, 0, 0 + input_size);
+        int idx = terms[pattern];
+        for (size_t i = input_size; i < f.literals.size(); i += input_size) {
+            std::string pattern2 = get_pattern(f, i, i + input_size);
+            Cell c;
+            c.input1 = idx;
+            c.input2 = terms[pattern2];
+            c.function = Function::Xor;
+            cells.push_back(c);
+            idx = cells.size() - 1;
+        }
+        output_indices.push_back(cells.size() - 1);
+    }
+
+    cgp_print(reference_bits, cells, output_indices);
+}
+
+// "copy paste" from CGP implementation, very slight changes were done
+void Circuit::cgp_print(const ReferenceBits &reference_bits, const std::vector<Cell> &cells, const std::vector<int> &output_indices) const {
+    printf("{%ld,%ld,%ld,%d,2,1,%d}", // two inputs, one output (basic logic gate)
         reference_bits.input.size(),
         reference_bits.output.size(),
-        cells.size() - reference_bits.input.size(), 1, 8
+        cells.size() - reference_bits.input.size(), 1, 8 // one row, 8 logical functions
     );
 
     for (unsigned int i = reference_bits.input.size(); i < cells.size(); i++) {
         printf("([%d]%d,%d,%d)", i, cells[i].input1, cells[i].input2, static_cast<int>(cells[i].function));
     }
 
-    std::cout << "(" << output_indices[0];
+    std::cout << "(" << output_indices[0]; // there should be always at least one output
     for (unsigned int i = 1; i < output_indices.size(); i++) {
         if (i != output_indices.size()) {
             std::cout << "," << output_indices[i];
@@ -346,4 +402,52 @@ void Circuit::print_cgp_viewer(const ReferenceBits &reference_bits) {
         }
     }
     std::cout << ")" << std::endl;
- }
+}
+
+std::string Circuit::get_pattern(const Formula &f, const int start, const int end) {
+    std::string pattern = "";
+
+    for (int i = start; i < end; i++) {
+        auto l = f.literals[i];
+        if (l.state == State::Is) {
+            pattern += "1"; // in
+        } else if (l.state == State::Not) {
+            pattern += "N"; // not
+        } else {
+            pattern += "0"; // none
+        }
+    }
+
+    return pattern;
+}
+
+std::map<std::string, int> Circuit::find_term_patterns(const int input_size) {
+    std::map<std::string, int> terms;
+
+    for (const auto &f : formulas) {
+        for (size_t i = 0; i < f.literals.size(); i += input_size) {
+            std::string pattern = get_pattern(f, i, i + input_size);
+            terms.insert(std::pair(pattern, -1)); // -1 indicates not generated sub-circuit
+        }
+    }
+
+    return terms;
+}
+
+void Circuit::insert_input_gates(const ReferenceBits &reference_bits, std::vector<Cell> &cells) {
+    for (auto input : reference_bits.input) {
+        Cell c;
+        c.function = Function::In;
+        cells.push_back(c);
+    }
+}
+
+void Circuit::insert_not_input_gates(const ReferenceBits &reference_bits, std::vector<Cell> &cells) {
+    for (size_t i = 0; i < reference_bits.input.size(); i++) {
+        Cell c;
+        c.function = Function::Not;
+        c.input1 = i;
+        c.input2 = 0;
+        cells.push_back(c);
+    }
+}

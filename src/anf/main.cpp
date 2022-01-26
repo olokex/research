@@ -55,7 +55,7 @@ std::tuple<Circuit, uint, uint> evolution(const Parameters &p, const ReferenceBi
                     std::cout << "ANF area: " << population[i].area << std::endl;
                 }
                 if (p.print_cgp_representation) {
-                    population[i].print_cgp_viewer(ref);
+                    population[i].print_cgp_viewer_optimized(ref);
                 }
                 return {population[i], gen, evaluation};
             }
@@ -112,7 +112,7 @@ void evolution_second_criterio(const Parameters &p, const ReferenceBits &ref, co
     }
 
     if (p.print_cgp_representation) {
-        fittest.print_cgp_viewer(ref);
+        fittest.print_cgp_viewer_optimized(ref);
     } else {
         fittest.print_circuit(ref.input.size(), p.print_ascii);
     }
@@ -133,9 +133,19 @@ int main(int argc, char *argv[]) {
         Parameters p(argc, argv);
         ReferenceBits ref(p.path);
         p.is_valid(ref);
+        std::cout << "========== ANF ==========" << std::endl;
+
+        // p.seed = 0;
 
         srand(p.seed);
         std::cout << "seed: " << p.seed << std::endl;
+
+        // Circuit c(p, ref);
+        // c.calculate_fitness(ref);
+        // c.print_circuit(ref.input.size(), false);
+        // c.print_cgp_viewer_optimized(ref);
+        // // c.print_cgp_viewer(ref);
+        // return 0;
 
         auto start = std::chrono::steady_clock::now();
         std::tuple<Circuit, uint, uint> hold = evolution(p, ref);
@@ -150,4 +160,5 @@ int main(int argc, char *argv[]) {
         std::cerr << "ERROR: " << err.what() << std::endl;
         return 1;
     }
+    std::cout << "========== ANF END ==========" << std::endl;
 }

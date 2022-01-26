@@ -102,6 +102,7 @@ void evolution_second_criterio(const Parameters &param, const ReferenceBits &ref
     if (param.print_used_gates) {
         fittest.print_used_gates(reference_bits.input.size(), param.allowed_functions);
     }
+    std::cout << "evaluations: " << evaluation << std::endl;
     std::cout << "CGP optimized area: " << fittest.area << std::endl;
 }
 
@@ -118,11 +119,13 @@ int main(int argc, char *argv[]) {
         Parameters params(argc, argv);
         ReferenceBits reference_bits(params.path);
         auto start = std::chrono::steady_clock::now();
-        
+        std::cout << "========== CGP ==========" << std::endl;
+
+
         srand(params.seed);
         std::cout << "seed: " << params.seed << std::endl;
 
-        // implicit expectation of opritimization (otherwise loading circuing would be meaningless)
+        // implicit expectation of opitimization (otherwise loading a circuing would be meaningless)
         if (!params.cgp_chromosome.empty()) {
             srand(params.seed);
             Circuit c(params.cgp_chromosome, reference_bits, params);
@@ -145,4 +148,5 @@ int main(int argc, char *argv[]) {
         std::cerr << "ERROR: " << err.what() << std::endl;
         return 1;
     }
+    std::cout << "========== CGP END ==========" << std::endl;
 }

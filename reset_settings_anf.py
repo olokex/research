@@ -9,15 +9,24 @@ import random, string
 def random_file_name(k=24):
     return "".join(random.choices(string.ascii_letters + string.digits, k=k))
 
-with open(os.path.join(os.getcwd(), "run_settings.json"), "r") as f:
+with open(os.path.join(os.getcwd(), "optimalization_config.json"), "r") as f:
     json_data = json.load(f)
 
-with open(os.path.join(os.getcwd(), "results_2m_gen_anf_3m5_gen_cgp/run_settings.json"), "r") as f:
-    json_data_old = json.load(f)
+with open(os.path.join(os.getcwd(), "optimization_arit_fce.json"), "r") as f:
+    json_data_arit = json.load(f)
+
+for record in json_data:
+    record["output_file"] = random_file_name()
+    record["cgp_gen"] = 11000000
+
+for record in json_data_arit:
+    record["output_file"] = random_file_name()
+    record["seed_index"] = -1
+    record["cgp_gen"] = 0
 
 
-print(len(json_data))
-
+with open(os.path.join(os.getcwd(), "testovacka.json"), "w") as f:
+    json.dump(json_data + json_data_arit , f, indent=4)
 # new_json = []
 
 # for record in json_data:

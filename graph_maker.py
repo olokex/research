@@ -4,9 +4,11 @@ import os
 import json
 import matplotlib.pyplot as plt
 from statistics import median
+import re
 
 PWD = os.getcwd()
 OUTS_DIR = os.path.join(PWD, "out_funcs7")
+OUTS_DIR_OPT = os.path.join(PWD, "opt-outputs")
 
 def retrieve_data(fp, search):
     data = []
@@ -62,9 +64,9 @@ def make_plot(title, min_eval, min_cost, median_eval, median_cost, showf=True):
     #plt.savefig(f"{title}.png")
 
 
-def boxplot(ax, title, data, ylabel, showf=False):
+def boxplot(ax, title, data, ylabel, xticklabel=["ANF", "CGP"], showf=False):
     ax.set_title(title)
-    ax.set_xticklabels(["ANF", "CGP"])
+    ax.set_xticklabels(xticklabel)
     ax.boxplot(data, widths=0.45, showfliers=showf)
     # ax.boxplot(data, widths=0.45, showfliers=showf)
     #ax.set_yticks(yticks)
@@ -72,14 +74,46 @@ def boxplot(ax, title, data, ylabel, showf=False):
 
 
 def find_not_found(file):
-    cnt = 0
-    for line in file.readlines():
-        if "NOT FOUND" in line:
-            cnt += 1
-    return cnt
+    with open(os.path.join(OUTS_DIR, file)) as out:
+        cnt = 0
+        for line in out.readlines():
+            if "NOT FOUND" in line:
+                cnt += 1
+        return cnt
+
+
 
 with open("run_settings.json") as fp:
     json_data = json.load(fp)
+
+
+with open(os.path.join(PWD, "optimalization_config.json")) as f:
+    json_optimized = json.load(f)
+
+
+def data_extract(file):
+    data = []
+
+    with open(os.path.join(OUTS_DIR_OPT, file)) as f:
+        for line in f.readlines():
+            if "CGP optimized area:" in line:
+                _, area = line.split(": ")
+                data.append(float(area))
+
+    return data
+
+def get_statistic_hundred(func):
+    data = []
+
+    for record in json_optimized:
+        if record["circuit_name"].startswith("func"):
+            data.append(func(data_extract(record["output_file"])))
+
+    return data
+
+# first = json_optimized[0]
+# print(first)
+# extract(first["output_file"])
 
     # worst_anf_max = 0
     # worst_anf_name = None
@@ -112,53 +146,74 @@ with open("run_settings.json") as fp:
     # print("cgp", cgp, f"worst {worst_cgp_max} file: {worst_cgp_name}")
 
     # exit()
-    min_anf = median(thousand(json_data, "evaluations:", min, "anf"))
-    min_cgp = median(thousand(json_data, "evaluations:", min, "cgp"))
+anf_not_found = 0
+for record in json_data:
+    if record["type"] == "anf":
+        anf_not_found += find_not_found(record["output_file"])
 
-    med_anf = median(thousand(json_data, "evaluations:", median, "anf"))
-    med_cgp = median(thousand(json_data, "evaluations:", median, "cgp"))
+cgp_not_found = 0
+for record in json_data:
+    if record["type"] == "cgp":
+        cgp_not_found += find_not_found(record["output_file"])      
 
-    print("anf min avg: ", min_anf)
-    print("cgp min avg: ", min_cgp)
-    print("anf faster min ", min_cgp//min_anf)
-    print()
-    print("anf med avg: ", med_anf)
-    print("cgp med avg: ", med_cgp)
-    print("anf faster med ", med_cgp/med_anf)
-
-    fig, axs = plt.subplots(2, 2, figsize=(12, 8), dpi=200)
-    # fig, axs = plt.subplots(2, 4, figsize=(12,6))
-    plt.suptitle("Porovnání ANF/CGP 1000 Funkcí 7 Vstupů 31 Běhů Očištěné", fontsize=16)
-    #plt.tight_layout()
+anf_not_found = 100 - anf_not_found / 31000 * 100
+cgp_not_found = 100 - cgp_not_found / 31000 * 100
 
 
-    lst = list(range(10))
-    props = dict(boxstyle='square', facecolor='white', alpha=0.5)
-    txt_min = f"median\nanf {min_anf:.0f}\ncgp {min_cgp:.0f}\nANF urychlení {min_cgp/min_anf:.0f} krát"
-    axs[0,0].text(0.05, 0.95, txt_min, transform=axs[0,0].transAxes, fontsize=8,
-        verticalalignment='top', bbox=props)
-    
-    txt_med = f"median\nanf {med_anf:.0f}\ncgp {med_cgp:.0f}\nANF urychlení {med_cgp/med_anf:.0f} krát"
-    axs[0,1].text(0.05, 0.95, txt_med, transform=axs[0,1].transAxes, fontsize=8,
-        verticalalignment='top', bbox=props)
+min_anf = median(thousand(json_data, "evaluations:", min, "anf"))
+min_cgp = median(thousand(json_data, "evaluations:", min, "cgp"))
 
-    boxplot(axs[0,0], "Minimální evaluace", 
-        [thousand(json_data, "evaluations:", min, "anf"), 
-        thousand(json_data, "evaluations:", min, "cgp")], "Evaluace")
+med_anf = median(thousand(json_data, "evaluations:", median, "anf"))
+med_cgp = median(thousand(json_data, "evaluations:", median, "cgp"))
 
-    boxplot(axs[0,1], "Medián evaluací", 
-        [thousand(json_data, "evaluations:", median, "anf"),
-        thousand(json_data, "evaluations:", median, "cgp")], "Evaluace")
+print("anf min avg: ", min_anf)
+print("cgp min avg: ", min_cgp)
+print("anf faster min ", min_cgp//min_anf)
+print()
+print("anf med avg: ", med_anf)
+print("cgp med avg: ", med_cgp)
+print("anf faster med ", med_cgp/med_anf)
 
-    boxplot(axs[1,0], "Minimální cena", 
-        [thousand(json_data, "optimized area:", min, "anf"), 
-        thousand(json_data, "optimized area:", min, "cgp")], "Plocha")
+fig, axs = plt.subplots(2, 2, figsize=(12, 8), dpi=200)
+# fig, axs = plt.subplots(2, 4, figsize=(12,6))
+plt.suptitle("Porovnání ANF/CGP 1000 Funkcí 7 Vstupů 31 Běhů Očištěné", fontsize=16)
+#plt.tight_layout()
 
-    boxplot(axs[1,1], "Medián ceny",
-        [thousand(json_data, "optimized area:", median, "anf"),
-        thousand(json_data, "optimized area:", median, "cgp")], "Plocha")
 
-    #plt.subplot_tool()
-    #plt.show()
-    plt.savefig("porovnani_fun7_anf_cgp_ocistene.png")
+lst = list(range(10))
+props = dict(boxstyle='square', facecolor='white', alpha=0.5)
+txt_min = f"median\nanf {min_anf:.0f}\ncgp {min_cgp:.0f}\nANF urychlení {min_cgp/min_anf:.0f} krát"
+axs[0,0].text(0.05, 0.95, txt_min, transform=axs[0,0].transAxes, fontsize=8,
+    verticalalignment='top', bbox=props)
+
+txt_med = f"median\nanf {med_anf:.0f}\ncgp {med_cgp:.0f}\nANF urychlení {med_cgp/med_anf:.0f} krát"
+axs[0,1].text(0.05, 0.95, txt_med, transform=axs[0,1].transAxes, fontsize=8,
+    verticalalignment='top', bbox=props)
+
+boxplot(axs[0,0], "Minimální evaluace", 
+    [thousand(json_data, "evaluations:", min, "anf"), 
+    thousand(json_data, "evaluations:", min, "cgp")], "Evaluace",
+    xticklabel=[f"ANF\n{anf_not_found:.0f} %", f"CGP\n{cgp_not_found:.0f} %"])
+
+boxplot(axs[0,1], "Medián evaluací", 
+    [thousand(json_data, "evaluations:", median, "anf"),
+    thousand(json_data, "evaluations:", median, "cgp")], "Evaluace")
+
+boxplot(axs[1,0], "Minimální cena", 
+    [
+        thousand(json_data, "optimized area:", min, "anf"), 
+        thousand(json_data, "optimized area:", min, "cgp"),
+        get_statistic_hundred(min)
+    ], "Plocha", xticklabel=["ANF", "CGP", "ANF + CGP"])
+
+boxplot(axs[1,1], "Medián ceny",
+    [
+        thousand(json_data, "optimized area:", median, "anf"),
+        thousand(json_data, "optimized area:", median, "cgp"),
+        get_statistic_hundred(median)
+    ], "Plocha", xticklabel=["ANF", "CGP", "ANF + CGP"])
+
+#plt.subplot_tool()
+# plt.show()
+plt.savefig("porovnani_fun7_anf_cgp_ocistene.png")
 
